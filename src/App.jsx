@@ -1,16 +1,28 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react'; 
 import { QRCodeSVG } from 'qrcode.react';
-import { Download } from 'lucide-react';
+import { Download, Upload, ImageOff } from 'lucide-react'; 
 
 function App() {
-  const [text, setText] = useState('https://google.com/');
+  const [text, setText] = useState('https://react.dev/');
   const qrCodeRef = useRef(null);
 
-  //New state for customizations
   const [size, setSize] = useState(256);
   const [fgColor, setFgColor] = useState('#000000');
   const [bgColor, setBgColor] = useState('#ffffff');
-  const [level, setLevel] = useState('L');
+  const [level, setLevel] = useState('M'); 
+
+
+  const [logoImage, setLogoImage] = useState(null); 
+
+  
+  useEffect(() => {
+    if (logoImage) {
+      setLevel('H'); 
+    } else {
+      setLevel('M'); 
+    }
+  }, [logoImage]); 
+
 
   const handleDownload = () => {
     if (qrCodeRef.current) {
@@ -23,19 +35,64 @@ function App() {
       const img = new Image();
       const svgData = new XMLSerializer().serializeToString(svgElement);
       img.onload = () => {
-        ctx.fillStyle = bgColor; // Fill background for PNG
+        ctx.fillStyle = bgColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 0, 0);
-        const link = document.createElement('a');
-        link.download = 'qrcode.png';
-        link.href = canvas.toDataURL('image/png');
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+
+        
+        if (logoImage) {
+          const logo = new Image();
+          logo.src = logoImage;
+          logo.onload = () => {
+            const logoWidth = 48; 
+            const logoHeight = 48; 
+            const x = (canvas.width - logoWidth) / 2;
+            const y = (canvas.height - logoHeight) / 2;
+            ctx.drawImage(logo, x, y, logoWidth, logoHeight);
+
+            const link = document.createElement('a');
+            link.download = 'qrcode_with_logo.png'; 
+            link.href = canvas.toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          };
+        } else {
+          
+          const link = document.createElement('a');
+          link.download = 'qrcode.png';
+          link.href = canvas.toDataURL('image/png');
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
       };
       img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
     }
   };
+
+  
+  const handleLogoUpload = (event) => {
+    const file = event.target.files[0];
+    if (file && file.type.startsWith('image/png')) { 
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoImage(reader.result); 
+      };
+      reader.readAsDataURL(file); 
+    } else {
+      alert('Please upload a PNG image file.');
+      setLogoImage(null); 
+    }
+  };
+
+  
+  const handleRemoveLogo = () => {
+    setLogoImage(null);
+    const fileInput = document.getElementById('logo-upload');
+    if (fileInput) fileInput.value = '';
+  };
+
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col items-center justify-center p-4 transition-colors duration-300">
@@ -65,7 +122,6 @@ function App() {
             />
           </div>
 
-          {/* --- NEW CUSTOMIZATION PANEL --- */}
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div>
               <label htmlFor="size" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Size: {size}px</label>
@@ -88,7 +144,40 @@ function App() {
               <label htmlFor="bgColor" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Background</label>
               <input type="color" id="bgColor" value={bgColor} onChange={(e) => setBgColor(e.target.value)} className="w-8 h-8 rounded-md cursor-pointer" />
             </div>
-          </div>
+
+            <div className="col-span-2 mt-2">
+                <label htmlFor="logo-upload" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Custom Logo (PNG only)</label>
+                <div className="flex items-center space-x-2">
+                    <input
+                        type="file"
+                        id="logo-upload"
+                        accept="image/png"
+                        onChange={handleLogoUpload}
+                        className="block w-full text-sm text-gray-500
+                                  file:mr-4 file:py-2 file:px-4
+                                  file:rounded-full file:border-0
+                                  file:text-sm file:font-semibold
+                                  file:bg-blue-50 file:text-blue-700
+                                  hover:file:bg-blue-100 dark:file:bg-blue-900 dark:file:text-blue-300 dark:hover:file:bg-blue-800"
+                    />
+                    {logoImage && (
+                        <button
+                            onClick={handleRemoveLogo}
+                            className="p-2 rounded-full bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-300 dark:hover:bg-red-800"
+                            title="Remove logo"
+                        >
+                            <ImageOff size={20} />
+                        </button>
+                    )}
+                </div>
+                {logoImage && (
+                    <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        Logo applied. Error Correction set to High.
+                    </div>
+                )}
+            </div>
+
+          </div> 
 
 
           <div ref={qrCodeRef} className="flex justify-center items-center p-4 bg-white rounded-lg min-h-[200px]" style={{ background: bgColor }}>
@@ -100,6 +189,18 @@ function App() {
                 fgColor={fgColor}
                 level={level}
                 includeMargin={true}
+                imageSettings={
+                  logoImage
+                    ? {
+                        src: logoImage,
+                        height: 48,
+                        width: 48,
+                        x: undefined, 
+                        y: undefined, 
+                        excavate: true,
+                      }
+                    : undefined 
+                }
               />
             ) : (
               <p className="text-gray-500 dark:text-gray-400 text-center">

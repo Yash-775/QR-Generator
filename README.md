@@ -6,6 +6,13 @@
 
 ![QR Code Generator Screenshot](https://github.com/user-attachments/assets/ba4cdf01-6a6f-4557-98ad-f35268b59a60)
 
+
+```
+Note: This Project is under MIT License. 
+I have made this project with much efforts, so please don't try to steal the project. 
+If you want to use the project, don't remove copyright and license otherwise
+strict action can be taken against you.
+```
 ---
 
 ## 📖 About The Project

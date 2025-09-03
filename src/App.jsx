@@ -17,7 +17,7 @@ function App() {
   
   useEffect(() => {
     if (logoImage) {
-      setLevel('H'); 
+      setLevel('H'); //setting the error correction level to high so after adding logo the qr still works
     } else {
       setLevel('M'); 
     }
@@ -27,38 +27,47 @@ function App() {
   const handleDownload = () => {
     if (qrCodeRef.current) {
       const svgElement = qrCodeRef.current.querySelector('svg');
+
+      //Read width/height directly from SVG attributes
+      const width = parseInt(svgElement.getAttribute('width'));
+      const height = parseInt(svgElement.getAttribute('height'));
+      
       const canvas = document.createElement('canvas');
+      
+      //Set canvas dimensions to match the SVG's actual size
+      canvas.width = width;
+      canvas.height = height;
       const ctx = canvas.getContext('2d');
-      const svgSize = svgElement.getBoundingClientRect();
-      canvas.width = svgSize.width;
-      canvas.height = svgSize.height;
+      
       const img = new Image();
       const svgData = new XMLSerializer().serializeToString(svgElement);
+      
       img.onload = () => {
         ctx.fillStyle = bgColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0);
-
         
+        //Explicitly set the drawImage size to match the canvas
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        //The rest of the download logic is the same, with the logo drawing added
         if (logoImage) {
           const logo = new Image();
           logo.src = logoImage;
           logo.onload = () => {
-            const logoWidth = 48; 
-            const logoHeight = 48; 
+            const logoWidth = 48;
+            const logoHeight = 48;
             const x = (canvas.width - logoWidth) / 2;
             const y = (canvas.height - logoHeight) / 2;
             ctx.drawImage(logo, x, y, logoWidth, logoHeight);
 
             const link = document.createElement('a');
-            link.download = 'qrcode_with_logo.png'; 
+            link.download = 'qrcode_with_logo.png';
             link.href = canvas.toDataURL('image/png');
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
           };
         } else {
-          
           const link = document.createElement('a');
           link.download = 'qrcode.png';
           link.href = canvas.toDataURL('image/png');
@@ -146,7 +155,7 @@ function App() {
             </div>
 
             <div className="col-span-2 mt-2">
-                <label htmlFor="logo-upload" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Custom Logo (PNG only)</label>
+                <label htmlFor="logo-upload" className="inline-block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Custom Logo (PNG only)</label>
                 <div className="flex items-center space-x-2">
                     <input
                         type="file"
